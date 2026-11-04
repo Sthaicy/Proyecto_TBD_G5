@@ -1,0 +1,16 @@
+# Local credentials
+.env
+
+# Local database files and backups
+oradata/
+*.dbf
+*.log
+*.trc
+*.dmp
+*.zip
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
