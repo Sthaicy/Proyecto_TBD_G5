@@ -12,7 +12,7 @@ CREATE TABLE unidad_medida (
   simbolo VARCHAR2(10) NOT NULL,
   CONSTRAINT uk_unidad_nombre UNIQUE (nombre)
 );
-
+    
 CREATE TABLE entidad (
   id_entidad NUMBER CONSTRAINT pk_entidad PRIMARY KEY,
   nombre VARCHAR2(80) NOT NULL,
