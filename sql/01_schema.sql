@@ -1,7 +1,4 @@
--- Esquema transcrito del modelo preliminar Modelo_Preliminar_TBD_Grupo#5.pdf.
--- El asterisco rojo del diagrama se interpreta como NOT NULL; sin asterisco = NULL.
--- P = PK; F = FK; U = UNIQUE; PF = PK y FK; UF = UNIQUE y FK.
--- El modelo no especifica secuencias ni identidad automática para sus NUMBER.
+
 SET ECHO ON
 SET FEEDBACK ON
 WHENEVER SQLERROR EXIT SQL.SQLCODE
