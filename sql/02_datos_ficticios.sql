@@ -1,6 +1,14 @@
 SET ECHO ON
 SET FEEDBACK ON
-WHENEVER SQLERROR EXIT SQL.SQLCODE ROLLBACK
+WHENEVER OSERROR EXIT FAILURE ROLLBACK
+WHENEVER SQLERROR EXIT FAILURE ROLLBACK
+
+BEGIN
+    IF USER <> 'FUEL_APP' OR SYS_CONTEXT('USERENV', 'CON_NAME') <> 'FREEPDB1' THEN
+        RAISE_APPLICATION_ERROR(-20000, 'Conectate como FUEL_APP a FREEPDB1.');
+    END IF;
+END;
+/
 
 INSERT INTO unidad_medida (
     id_unidad,
@@ -23,9 +31,7 @@ INSERT INTO unidad_medida (
 );
 
 
--- =========================================================
 -- ENTIDADES EXTERNAS
--- =========================================================
 
 INSERT INTO entidad (id_entidad, nombre, tipo)
 VALUES (1, 'ANH', 'REGULADOR');
@@ -43,9 +49,7 @@ INSERT INTO entidad (id_entidad, nombre, tipo)
 VALUES (5, 'BCB', 'DATOS');
 
 
--- =========================================================
 -- DEPARTAMENTOS
--- =========================================================
 
 INSERT INTO departamento (id_departamento, nombre)
 VALUES (1, 'Cochabamba');
@@ -57,9 +61,7 @@ INSERT INTO departamento (id_departamento, nombre)
 VALUES (3, 'La Paz');
 
 
--- =========================================================
 -- MUNICIPIOS
--- =========================================================
 
 INSERT INTO municipio (
     id_municipio, id_departamento, nombre,
@@ -102,9 +104,7 @@ INSERT INTO municipio (
 );
 
 
--- =========================================================
 -- MARCAS
--- =========================================================
 
 INSERT INTO marca (id_marca, nombre)
 VALUES (1, 'Toyota');
@@ -122,9 +122,7 @@ INSERT INTO marca (id_marca, nombre)
 VALUES (5, 'King Long');
 
 
--- =========================================================
 -- TIPOS DE PERIODO
--- =========================================================
 
 INSERT INTO tipo_periodo (id_tipo_periodo, nombre, dias)
 VALUES (1, 'DIARIO', 1);
@@ -136,9 +134,7 @@ INSERT INTO tipo_periodo (id_tipo_periodo, nombre, dias)
 VALUES (3, 'MENSUAL', 30);
 
 
--- =========================================================
 -- TIPOS DE TARIFA
--- =========================================================
 
 INSERT INTO tipo_tarifa (id_tipo_tarifa, codigo, descripcion)
 VALUES (1, 'SUBVENCIONADO', 'Precio regulado por el Estado');
@@ -147,9 +143,7 @@ INSERT INTO tipo_tarifa (id_tipo_tarifa, codigo, descripcion)
 VALUES (2, 'INTERNACIONAL', 'Precio sin subvencion');
 
 
--- =========================================================
 -- TIPOS DE VEHICULO
--- =========================================================
 
 INSERT INTO tipo_vehiculo (id_tipo_vehiculo, nombre)
 VALUES (1, 'MOTO');
@@ -167,9 +161,7 @@ INSERT INTO tipo_vehiculo (id_tipo_vehiculo, nombre)
 VALUES (5, 'MINIBUS');
 
 
--- =========================================================
 -- TIPOS DE USO
--- =========================================================
 
 INSERT INTO tipo_uso (id_tipo_uso, nombre)
 VALUES (1, 'PARTICULAR');
@@ -181,9 +173,7 @@ INSERT INTO tipo_uso (id_tipo_uso, nombre)
 VALUES (3, 'TRANSPORTE DE CARGA');
 
 
--- =========================================================
 -- ROLES
--- =========================================================
 
 INSERT INTO rol (id_rol, nombre, descripcion)
 VALUES (1, 'ADMINISTRADOR', 'Gestion general del sistema');
@@ -195,9 +185,7 @@ INSERT INTO rol (id_rol, nombre, descripcion)
 VALUES (3, 'AUDITOR', 'Revisa transacciones y alertas');
 
 
--- =========================================================
 -- TIPOS DE REGLA
--- =========================================================
 
 INSERT INTO tipo_regla (
     id_tipo_regla, codigo, categoria,
@@ -239,11 +227,9 @@ INSERT INTO tipo_regla (
     'VEHICULOS', 'Cantidad maxima de vehiculos por persona'
 );
 
--- =========================================================
 -- COMBUSTIBLES
 -- capacidad_lt y origen son valores provisionales porque
 -- su ubicación definitiva debe ser confirmada por el grupo.
--- =========================================================
 
 INSERT INTO combustible (
     id_combustible, id_unidad, nombre,
@@ -270,9 +256,7 @@ INSERT INTO combustible (
 );
 
 
--- =========================================================
 -- ESTACIONES DE SERVICIO
--- =========================================================
 
 INSERT INTO estacion_servicio (
     id_estacion, id_municipio, nombre,
@@ -302,9 +286,7 @@ INSERT INTO estacion_servicio (
 );
 
 
--- =========================================================
 -- SURTIDORES
--- =========================================================
 
 INSERT INTO surtidor (
     id_surtidor, id_estacion,
@@ -342,9 +324,7 @@ INSERT INTO surtidor (
 );
 
 
--- =========================================================
 -- FICHAS TÉCNICAS DE ADUANA
--- =========================================================
 
 INSERT INTO ficha_aduana (
     id_ficha, id_marca, id_tipo_vehiculo,
@@ -386,9 +366,7 @@ INSERT INTO ficha_aduana (
     3000, '4X2', 100
 );
 
--- =========================================================
 -- PERSONAS
--- =========================================================
 
 -- Propietario del vehículo
 INSERT INTO persona (
@@ -409,10 +387,8 @@ INSERT INTO persona (
 );
 
 
--- =========================================================
 -- USUARIO DEL OPERADOR
 -- La contraseña es un valor ficticio no utilizable.
--- =========================================================
 
 INSERT INTO usuario_sistema (
     id_usuario, id_persona, id_rol,
@@ -426,9 +402,7 @@ INSERT INTO usuario_sistema (
 );
 
 
--- =========================================================
 -- VEHÍCULO
--- =========================================================
 
 INSERT INTO vehiculo (
     id_vehiculo, id_ficha, id_tipo_uso,
@@ -449,9 +423,7 @@ INSERT INTO vehiculo_combustible (
 );
 
 
--- =========================================================
 -- REGISTRO RUAT Y BENEFICIO
--- =========================================================
 
 INSERT INTO registro_ruat (
     id_registro_ruat, id_persona, id_vehiculo,
@@ -470,9 +442,7 @@ INSERT INTO registro_beneficio (
 );
 
 
--- =========================================================
 -- PRECIO SUBVENCIONADO
--- =========================================================
 
 INSERT INTO precio_combustible (
     id_precio, id_combustible, id_tipo_tarifa,
@@ -485,10 +455,8 @@ INSERT INTO precio_combustible (
 );
 
 
--- =========================================================
 -- REGLA DE CAPACIDAD
 -- El volumen no debe superar el 100 % del tanque.
--- =========================================================
 
 INSERT INTO regla (
     id_regla, id_tipo_regla, id_tipo_periodo,
@@ -511,9 +479,7 @@ INSERT INTO regla_combustible (
 );
 
 
--- =========================================================
 -- TRANSACCIÓN 1: CARGA NORMAL DE 30 LITROS
--- =========================================================
 
 INSERT INTO transaccion (
     id_transaccion, id_surtidor, id_persona,
@@ -544,10 +510,8 @@ INSERT INTO carga_vehicular (
 );
 
 
--- =========================================================
 -- TRANSACCIÓN 2: CARGA OBSERVADA DE 55 LITROS
 -- El vehículo tiene capacidad declarada de 50 litros.
--- =========================================================
 
 INSERT INTO transaccion (
     id_transaccion, id_surtidor, id_persona,
@@ -578,9 +542,7 @@ INSERT INTO carga_vehicular (
 );
 
 
--- =========================================================
--- ALERTA GENERADA PARA LA SEGUNDA CARGA
--- =========================================================
+-- ALERTA DE EJEMPLO INSERTADA MANUALMENTE PARA LA SEGUNDA CARGA
 
 INSERT INTO alerta (
     id_alerta, id_regla, id_transaccion,

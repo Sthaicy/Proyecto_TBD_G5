@@ -15,7 +15,11 @@ las tablas, claves primarias, claves foráneas, restricciones, índices y
 relaciones necesarias para registrar operaciones de combustible y detectar
 posibles irregularidades.
 
-## Estado actual
+## Estado de la revisión original
+
+Los resultados de esta sección corresponden al entorno utilizado por el autor.
+Para comprobar la nueva base con la imagen oficial, seguir el README y ejecutar
+los scripts en orden. No constituyen evidencia de ejecución en esa nueva base.
 
 El modelo fue desplegado en Oracle Free mediante Docker. La ejecución del
 archivo `01_schema.sql` creó correctamente 35 tablas.
@@ -40,9 +44,9 @@ beneficios de subvención, permisos para compras en bidón, reglas de control y
 alertas.
 
 Las reglas pueden utilizar datos como la cantidad cargada, frecuencia de
-cargas, capacidad del tanque y distancia entre municipios. Cuando una
-operación presenta un comportamiento sospechoso, se genera una alerta para
-que sea revisada por un auditor.
+cargas, capacidad del tanque y distancia entre municipios. La generación
+automática de alertas queda pendiente de implementar. En los datos ficticios se inserta una alerta manual para demostrar su consulta y
+posterior revisión por un auditor.
 
 Una alerta representa un indicio y no una confirmación automática de
 contrabando.
@@ -84,15 +88,16 @@ Se propone:
 
 ```sql
 id_transaccion NUMBER NOT NULL
+```
 
-3. Permitir cargas sin beneficio
+### 3. Permitir cargas sin beneficio
 En carga_vehicular, la columna id_beneficio es obligatoria. Esto impide
 registrar vehículos que no reciben subvención y pagan una tarifa
 internacional.
 
 Se recomienda permitir que id_beneficio sea nulo cuando no se utilice
 subvención.
-4. Añadir restricciones para cantidades
+### 4. Añadir restricciones para cantidades
 Se recomienda impedir valores negativos o iguales a cero en:
 - Cantidad de combustible.
 - Capacidad del tanque.
@@ -103,7 +108,7 @@ Se recomienda impedir valores negativos o iguales a cero en:
 - Tiempo de viaje.
 Ejemplo: CONSTRAINT ck_detalle_cantidad CHECK (cantidad > 0)
 
-5. Evitar contradicciones en el detalle
+### 5. Evitar contradicciones en el detalle
 detalle_transaccion almacena simultáneamente:
 - Combustible.
 - Tarifa.
@@ -115,7 +120,7 @@ Podrían registrarse identificadores que no correspondan entre sí.
 Se recomienda simplificar la relación o implementar una validación que
 garantice la coincidencia de estos datos.
 
-6. Añadir código oficial de estación
+### 6. Añadir código oficial de estación
 Actualmente las estaciones se identifican principalmente por su nombre.
 
 Se propone agregar un código oficial único, por ejemplo:
@@ -123,7 +128,7 @@ codigo_anh VARCHAR2(30) UNIQUE
 
 Esto evitaría depender del nombre comercial de la estación.
 
-7. Incorporar control físico de tanques
+### 7. Incorporar control físico de tanques
 La tabla recepcion_combustible registra el combustible recibido, pero no
 existe una tabla que represente los tanques físicos de almacenamiento.
 
@@ -133,7 +138,7 @@ Se propone evaluar las tablas:
 - ajuste_inventario
 Esto permitiría comparar el combustible recibido, vendido y almacenado.
 
-8. Revisar índices de claves foráneas
+### 8. Revisar índices de claves foráneas
 Existen índices para algunas consultas importantes, pero no para todas las
 claves foráneas.
 
@@ -147,7 +152,7 @@ como:
 No se recomienda crear índices en todas las columnas sin analizar primero
 las consultas.
 
-9. Generación de identificadores
+### 9. Generación de identificadores
 Los identificadores deben introducirse manualmente en la versión actual.
 
 Se podría utilizar IDENTITY o secuencias de Oracle para reducir errores y
@@ -238,3 +243,4 @@ La tercera prueba confirma la necesidad de implementar:
 ```sql
 CONSTRAINT ck_detalle_cantidad
 CHECK (cantidad > 0)
+```

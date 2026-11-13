@@ -1,23 +1,42 @@
+name: fuel-oracle-oficial
+
 services:
   oracle:
-    image: gvenzl/oracle-free:23-slim-faststart
-    container_name: fuel-monitoring-oracle
+    image: container-registry.oracle.com/database/free:23.26.3.0
+    container_name: fuel-oracle-oficial
     restart: unless-stopped
     ports:
-      - "${DB_PORT:-1521}:1521"
+      - "127.0.0.1:${DB_PORT:-1522}:1521"
     environment:
-      ORACLE_PASSWORD: ${ORACLE_PASSWORD:?Copy .env.example to .env and set ORACLE_PASSWORD}
-      APP_USER: ${APP_USER:-FUEL_APP}
-      APP_USER_PASSWORD: ${APP_USER_PASSWORD:?Copy .env.example to .env and set APP_USER_PASSWORD}
+      ORACLE_PWD: ${ORACLE_PWD:?Configura ORACLE_PWD en .env con una contraseña propia}
     volumes:
-      - oracle-data:/opt/oracle/oradata
+      - oracle-official-data:/opt/oracle/oradata
       - ./sql:/workspace/sql:ro
     healthcheck:
-      test: ["CMD", "healthcheck.sh"]
+      test:
+        - CMD-SHELL
+        - |
+          sqlplus -L -s / as sysdba <<'SQL' >/dev/null 2>&1
+          WHENEVER OSERROR EXIT FAILURE
+          WHENEVER SQLERROR EXIT FAILURE
+          DECLARE
+            abiertos NUMBER;
+          BEGIN
+            SELECT COUNT(*) INTO abiertos FROM v$$pdbs
+              WHERE name = 'FREEPDB1' AND open_mode = 'READ WRITE';
+            IF abiertos <> 1 THEN
+              RAISE_APPLICATION_ERROR(-20000, 'FREEPDB1 no esta disponible.');
+            END IF;
+          END;
+          /
+          EXIT SUCCESS
+          SQL
       interval: 30s
-      timeout: 10s
-      retries: 10
-      start_period: 2m
+      timeout: 30s
+      retries: 20
+      start_period: 5m
+    stop_grace_period: 2m
 
 volumes:
-  oracle-data:
+  oracle-official-data:
+    name: fuel-oracle-oficial-data
