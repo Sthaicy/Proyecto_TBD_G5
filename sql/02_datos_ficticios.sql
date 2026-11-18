@@ -228,99 +228,106 @@ INSERT INTO tipo_regla (
 );
 
 -- COMBUSTIBLES
--- capacidad_lt y origen son valores provisionales porque
--- su ubicación definitiva debe ser confirmada por el grupo.
+-- origen es la procedencia del combustible. DESCONOCIDO no inventa su procedencia.
+-- origen_instalacion describe por separado el equipo del vehiculo.
 
 INSERT INTO combustible (
     id_combustible, id_unidad, nombre,
-    capacidad_lt, origen
+    origen
 ) VALUES (
     1, 1, 'GASOLINA',
-    1, 'PRUEBA'
+    'DESCONOCIDO'
 );
 
 INSERT INTO combustible (
     id_combustible, id_unidad, nombre,
-    capacidad_lt, origen
+    origen
 ) VALUES (
     2, 1, 'DIESEL',
-    1, 'PRUEBA'
+    'DESCONOCIDO'
 );
 
 INSERT INTO combustible (
     id_combustible, id_unidad, nombre,
-    capacidad_lt, origen
+    origen
 ) VALUES (
     3, 2, 'GNV',
-    1, 'PRUEBA'
+    'DESCONOCIDO'
 );
 
 
 -- ESTACIONES DE SERVICIO
 
 INSERT INTO estacion_servicio (
-    id_estacion, id_municipio, nombre,
+    id_estacion, id_municipio, codigo_anh, nombre,
     direccion, latitud, longitud, estado
 ) VALUES (
-    1, 1, 'Estacion Central Cochabamba',
+    1, 1, 'ANH-FICT-001', 'Estacion Central Cochabamba',
     'Av. Blanco Galindo km 2',
     -17.394000, -66.178000, 'ACTIVA'
 );
 
 INSERT INTO estacion_servicio (
-    id_estacion, id_municipio, nombre,
+    id_estacion, id_municipio, codigo_anh, nombre,
     direccion, latitud, longitud, estado
 ) VALUES (
-    2, 2, 'Estacion Quillacollo',
+    2, 2, 'ANH-FICT-002', 'Estacion Quillacollo',
     'Av. Blanco Galindo km 11',
     -17.392500, -66.276000, 'ACTIVA'
 );
 
 INSERT INTO estacion_servicio (
-    id_estacion, id_municipio, nombre,
+    id_estacion, id_municipio, codigo_anh, nombre,
     direccion, latitud, longitud, estado
 ) VALUES (
-    3, 3, 'Estacion Sacaba',
+    3, 3, 'ANH-FICT-003', 'Estacion Sacaba',
     'Av. Villazon km 8',
     -17.403000, -66.043000, 'ACTIVA'
 );
 
 
+-- TANQUES FICTICIOS: capacidad y stock en la unidad del combustible.
+INSERT INTO tanque(id_tanque,id_estacion,id_combustible,codigo,capacidad,stock_inicial,fecha_inicio) VALUES (1,1,1,'T-01',10000,1000,TIMESTAMP '2026-11-01 00:00:00');
+INSERT INTO tanque(id_tanque,id_estacion,id_combustible,codigo,capacidad,stock_inicial,fecha_inicio) VALUES (2,1,2,'T-02',10000,1000,TIMESTAMP '2026-11-01 00:00:00');
+INSERT INTO tanque(id_tanque,id_estacion,id_combustible,codigo,capacidad,stock_inicial,fecha_inicio) VALUES (3,2,1,'T-03',10000,1000,TIMESTAMP '2026-11-01 00:00:00');
+INSERT INTO tanque(id_tanque,id_estacion,id_combustible,codigo,capacidad,stock_inicial,fecha_inicio) VALUES (4,2,2,'T-04',10000,1000,TIMESTAMP '2026-11-01 00:00:00');
+INSERT INTO tanque(id_tanque,id_estacion,id_combustible,codigo,capacidad,stock_inicial,fecha_inicio) VALUES (5,3,1,'T-05',10000,1000,TIMESTAMP '2026-11-01 00:00:00');
+
 -- SURTIDORES
 
 INSERT INTO surtidor (
-    id_surtidor, id_estacion,
+    id_tanque, id_surtidor, id_estacion,
     id_combustible, codigo, estado
 ) VALUES (
-    1, 1, 1, 'CBBA-GAS-01', 'ACTIVO'
+    1, 1, 1, 1, 'CBBA-GAS-01', 'ACTIVO'
 );
 
 INSERT INTO surtidor (
-    id_surtidor, id_estacion,
+    id_tanque, id_surtidor, id_estacion,
     id_combustible, codigo, estado
 ) VALUES (
-    2, 1, 2, 'CBBA-DIE-01', 'ACTIVO'
+    2, 2, 1, 2, 'CBBA-DIE-01', 'ACTIVO'
 );
 
 INSERT INTO surtidor (
-    id_surtidor, id_estacion,
+    id_tanque, id_surtidor, id_estacion,
     id_combustible, codigo, estado
 ) VALUES (
-    3, 2, 1, 'QUI-GAS-01', 'ACTIVO'
+    3, 3, 2, 1, 'QUI-GAS-01', 'ACTIVO'
 );
 
 INSERT INTO surtidor (
-    id_surtidor, id_estacion,
+    id_tanque, id_surtidor, id_estacion,
     id_combustible, codigo, estado
 ) VALUES (
-    4, 2, 2, 'QUI-DIE-01', 'ACTIVO'
+    4, 4, 2, 2, 'QUI-DIE-01', 'ACTIVO'
 );
 
 INSERT INTO surtidor (
-    id_surtidor, id_estacion,
+    id_tanque, id_surtidor, id_estacion,
     id_combustible, codigo, estado
 ) VALUES (
-    5, 3, 1, 'SAC-GAS-01', 'ACTIVO'
+    5, 5, 3, 1, 'SAC-GAS-01', 'ACTIVO'
 );
 
 
@@ -416,7 +423,7 @@ INSERT INTO vehiculo (
 
 INSERT INTO vehiculo_combustible (
     id_vehiculo, id_combustible,
-    capacidad_lt, origen
+    capacidad_lt, origen_instalacion
 ) VALUES (
     1, 1,
     50, 'FABRICA'
@@ -558,4 +565,11 @@ INSERT INTO alerta (
     'PENDIENTE', NULL
 );
 
+-- Recepcion, ajuste y medicion para comprobar el balance: 1000+500-30-2=1468.
+INSERT INTO recepcion_combustible(id_recepcion,id_tanque,id_estacion,id_entidad,id_combustible,id_tipo_tarifa,cantidad,fecha_hora,nro_documento)
+VALUES(1,1,1,2,1,1,500,TIMESTAMP '2026-11-10 08:00:00','RECEP-FICT-001');
+INSERT INTO ajuste_inventario(id_ajuste,id_tanque,id_usuario,fecha_hora,cantidad,motivo)
+VALUES(1,1,1,TIMESTAMP '2026-11-10 18:00:00',-2,'Merma ficticia documentada');
+INSERT INTO medicion_tanque(id_medicion,id_tanque,fecha_hora,cantidad,observacion)
+VALUES(1,1,TIMESTAMP '2026-11-10 19:00:00',1468,'Lectura ficticia de cierre');
 COMMIT;

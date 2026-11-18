@@ -128,3 +128,7 @@ WHERE rr.fecha_inicio <= SYSDATE
   AND rb.fecha_inicio <= SYSDATE
   AND (rb.fecha_fin IS NULL OR rb.fecha_fin > SYSDATE)
   AND rb.estado = 'HABILITADO';
+
+-- INVENTARIO: no mezcla litros con m3; solo descuenta ventas APROBADAS.
+SELECT * FROM v_balance_tanque ORDER BY id_tanque;
+SELECT * FROM v_conciliacion_tanque ORDER BY id_tanque;

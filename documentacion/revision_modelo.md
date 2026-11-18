@@ -1,246 +1,68 @@
-# Revisión del modelo de datos
-
-## Proyecto
-
-Sistema Nacional de Control y Monitoreo de Combustible.
-
-## Responsable de la revisión
-
-Rogelio José Cortez Ramírez.
-
-## Objetivo
-
-Revisar el modelo entidad-relación y su implementación en Oracle, verificando
-las tablas, claves primarias, claves foráneas, restricciones, índices y
-relaciones necesarias para registrar operaciones de combustible y detectar
-posibles irregularidades.
-
-## Estado de la revisión original
-
-Los resultados de esta sección corresponden al entorno utilizado por el autor.
-Para comprobar la nueva base con la imagen oficial, seguir el README y ejecutar
-los scripts en orden. No constituyen evidencia de ejecución en esa nueva base.
-
-El modelo fue desplegado en Oracle Free mediante Docker. La ejecución del
-archivo `01_schema.sql` creó correctamente 35 tablas.
-
-Las siguientes comprobaciones fueron realizadas:
-
-- Oracle se encuentra en estado `healthy`.
-- Se crearon 35 tablas.
-- No existen objetos con estado inválido.
-- Las claves primarias y foráneas fueron creadas correctamente.
-- El almacenamiento de Oracle utiliza persistencia mediante Docker.
-- El esquema de trabajo corresponde al usuario `FUEL_APP`.
-
-## Funcionamiento general
-
-El sistema registra personas, vehículos, estaciones de servicio, surtidores,
-combustibles, precios y transacciones.
-
-Cada carga vehicular se relaciona con una persona, un vehículo, una estación,
-un surtidor y un operador. El sistema también contempla registros del RUAT,
-beneficios de subvención, permisos para compras en bidón, reglas de control y
-alertas.
-
-Las reglas pueden utilizar datos como la cantidad cargada, frecuencia de
-cargas, capacidad del tanque y distancia entre municipios. La generación
-automática de alertas queda pendiente de implementar. En los datos ficticios se inserta una alerta manual para demostrar su consulta y
-posterior revisión por un auditor.
-
-Una alerta representa un indicio y no una confirmación automática de
-contrabando.
-
-## Aspectos correctos del modelo
-
-1. El modelo conserva el historial de propietarios mediante `registro_ruat`.
-2. La tabla `registro_beneficio` permite registrar la vigencia de la
-   subvención.
-3. Las tablas `transaccion`, `carga_vehicular` y `compra_bidon` separan los
-   diferentes tipos de venta.
-4. Las reglas son configurables mediante `tipo_regla`, `tipo_periodo` y
-   `regla`.
-5. La tabla `alerta` permite revisar casos sospechosos sin eliminar las
-   transacciones originales.
-6. Los precios conservan fechas de vigencia.
-7. La tabla `auditoria` permite registrar cambios sobre información crítica.
-8. Existen índices para búsquedas frecuentes de transacciones y alertas.
-
-## Mejoras propuestas
-
-### 1. Revisar atributos repetidos de combustible
-
-La tabla `combustible` contiene los atributos `capacidad_lt` y `origen`.
-Estos atributos también aparecen en `vehiculo_combustible`.
-
-La capacidad no es una característica general de la gasolina, diésel o GNV,
-sino del depósito utilizado por un vehículo. Se recomienda mantener estos
-atributos solamente en `vehiculo_combustible`.
-
-Esta modificación debe aprobarse con el grupo antes de aplicarse.
-
-### 2. Hacer obligatoria la transacción del detalle
-
-En `detalle_transaccion`, la columna `id_transaccion` permite valores nulos.
-Un detalle no debería existir sin una transacción principal.
-
-Se propone:
-
-```sql
-id_transaccion NUMBER NOT NULL
-```
-
-### 3. Permitir cargas sin beneficio
-En carga_vehicular, la columna id_beneficio es obligatoria. Esto impide
-registrar vehículos que no reciben subvención y pagan una tarifa
-internacional.
-
-Se recomienda permitir que id_beneficio sea nulo cuando no se utilice
-subvención.
-### 4. Añadir restricciones para cantidades
-Se recomienda impedir valores negativos o iguales a cero en:
-- Cantidad de combustible.
-- Capacidad del tanque.
-- Precio.
-- Número de bidones.
-- Capacidad de los bidones.
-- Distancias.
-- Tiempo de viaje.
-Ejemplo: CONSTRAINT ck_detalle_cantidad CHECK (cantidad > 0)
-
-### 5. Evitar contradicciones en el detalle
-detalle_transaccion almacena simultáneamente:
-- Combustible.
-- Tarifa.
-- Precio.
-- Precio unitario.
-El registro de precio_combustible ya determina un combustible y una tarifa.
-Podrían registrarse identificadores que no correspondan entre sí.
-
-Se recomienda simplificar la relación o implementar una validación que
-garantice la coincidencia de estos datos.
-
-### 6. Añadir código oficial de estación
-Actualmente las estaciones se identifican principalmente por su nombre.
-
-Se propone agregar un código oficial único, por ejemplo:
-codigo_anh VARCHAR2(30) UNIQUE
-
-Esto evitaría depender del nombre comercial de la estación.
-
-### 7. Incorporar control físico de tanques
-La tabla recepcion_combustible registra el combustible recibido, pero no
-existe una tabla que represente los tanques físicos de almacenamiento.
-
-Se propone evaluar las tablas:
-- tanque
-- medicion_tanque
-- ajuste_inventario
-Esto permitiría comparar el combustible recibido, vendido y almacenado.
-
-### 8. Revisar índices de claves foráneas
-Existen índices para algunas consultas importantes, pero no para todas las
-claves foráneas.
-
-Se recomienda analizar los campos utilizados frecuentemente en consultas,
-como:
-- id_estacion
-- id_vehiculo
-- id_combustible
-- id_usuario
-- id_regla
-No se recomienda crear índices en todas las columnas sin analizar primero
-las consultas.
-
-### 9. Generación de identificadores
-Los identificadores deben introducirse manualmente en la versión actual.
-
-Se podría utilizar IDENTITY o secuencias de Oracle para reducir errores y
-evitar colisiones de identificadores. Esta modificación no es obligatoria
-para las pruebas actuales.
-
-Recomendación
-No se recomienda modificar inmediatamente todas las tablas. Primero deben
-aprobarse las mejoras con el grupo y comprobar cuáles son necesarias para el
-alcance académico del proyecto.
-
-Para las pruebas iniciales se utilizará el esquema actual. Los datos
-ficticios y consultas permitirán comprobar si las relaciones existentes
-funcionan correctamente.
-Conclusión
-El modelo actual puede ejecutarse correctamente en Oracle y contiene las
-entidades principales para registrar ventas de combustible, vehículos,
-personas, estaciones y reglas de control.
-
-Las principales oportunidades de mejora se relacionan con la normalización
-de atributos, restricciones de integridad, control de inventario y
-validación de operaciones. Estas propuestas permitirían reducir datos
-inconsistentes y mejorar la detección de operaciones sospechosas.
-
-
-
-### Decisión provisional para las pruebas
-
-Debido a que no se pudo confirmar inmediatamente cuál versión es la
-definitiva, las pruebas se realizarán utilizando el esquema disponible en
-la rama `prueba`.
-
-Los campos `capacidad_lt` y `origen` de `combustible` recibirán valores
-técnicos provisionales para satisfacer las restricciones `NOT NULL`. Estos
-valores no serán utilizados en las consultas ni considerados información
-válida del negocio.
-
-La ubicación definitiva de estos atributos deberá ser confirmada por el
-grupo antes de integrar cambios al modelo.
-
-## Pruebas realizadas
-
-### Creación del esquema
-
-El archivo `01_schema.sql` fue ejecutado en Oracle Free mediante Docker.
-
-Resultados:
-
-- 35 tablas creadas.
-- Cero objetos inválidos.
-- Contenedor Oracle en estado saludable.
-
-### Datos ficticios
-
-Se registró un caso ficticio compuesto por:
-
-- Un propietario.
-- Un operador.
-- Un vehículo.
-- Un registro RUAT.
-- Un beneficio de subvención.
-- Una estación y un surtidor.
-- Una carga normal de 30 litros.
-- Una carga observada de 55 litros.
-- Una alerta por superar la capacidad declarada de 50 litros.
-
-### Consultas
-
-Las consultas permitieron comprobar:
-
-- Historial de cargas por vehículo.
-- Total consumido y pagado.
-- Ventas agrupadas por estación.
-- Cargas superiores a la capacidad.
-- Alertas pendientes.
-- Propietarios con beneficio vigente.
-
-### Pruebas de integridad
-
-Se comprobó que Oracle:
-
-1. Rechaza placas duplicadas mediante una restricción única.
-2. Rechaza vehículos inexistentes mediante una clave foránea.
-3. Actualmente permite cantidades negativas en `detalle_transaccion`.
-
-La tercera prueba confirma la necesidad de implementar:
-
-```sql
-CONSTRAINT ck_detalle_cantidad
-CHECK (cantidad > 0)
-```
+# Revision del modelo de datos
+
+Actualizacion del 18 de noviembre de 2026 para el proyecto de control de
+combustible. El esquema SQL es la referencia ejecutable; los diagramas PDF
+anteriores deben actualizarse para reflejar estos cambios.
+
+| Observacion | Cambio aplicado |
+|---|---|
+| Capacidad repetida en combustible | Retirada de `combustible`; conservada en `vehiculo_combustible`. La ficha tecnica mantiene la capacidad de fabrica del modelo. |
+| Significado de origen | `combustible.origen` conserva procedencia. El del vehiculo se llama `origen_instalacion`. Ejemplos: procedencia DESCONOCIDO e instalacion FABRICA. |
+| Detalle sin transaccion | `id_transaccion NOT NULL` y FK. |
+| Carga sin subvencion | `id_beneficio` admite NULL. No sustituye la futura validacion de elegibilidad del beneficio y la tarifa. |
+| Cantidades invalidas | CHECK de volumen, capacidad, precios, bidones, tipo de cambio, fechas e importes. Mediciones aceptan cero; ajustes aceptan signo pero no cero. |
+| Identificacion de estaciones | `codigo_anh` obligatorio y unico; los ejemplos estan marcados como ficticios. |
+| Inventario fisico | `tanque`, `medicion_tanque`, `ajuste_inventario`; recepciones y surtidores identifican su tanque. FK compuestas impiden mezclar estacion o combustible. |
+| Precio, tarifa y combustible contradictorios | FK compuesta contra `precio_combustible` que incluye el precio unitario en Bs. Validacion de vigencia y proteccion del historial. |
+| Combustible incompatible con surtidor | Combustible en transaccion ligado al surtidor mediante FK compuesta; el detalle debe coincidir con la transaccion. |
+| Subtipos inconsistentes o inexistentes | CHECK, FK compuestas, referencias diferidas desde transaccion y trigger que completa referencias. Es obligatorio insertar padre y subtipo antes del COMMIT. |
+| Indices | Indices adicionales sobre FK y fechas de inventario; comprobar planes con datos finales. |
+| IDs manuales | Identidades desde 1.000.000 en claves simples independientes; claves compuestas y subtipos mantienen su funcion. |
+
+## Control de inventario
+
+El tanque define capacidad, stock inicial y fecha inicial. Las cantidades usan
+la unidad del combustible, sin convertir GNV en m3 a litros.
+
+`v_balance_tanque` calcula stock inicial + recepciones - ventas aprobadas + ajustes.
+`v_conciliacion_tanque` compara la ultima lectura fisica con los movimientos hasta
+esa misma fecha. No se mezclan movimientos posteriores con una lectura anterior.
+El ejemplo produce saldo 1468 y diferencia cero. Los saldos negativos se muestran
+para investigacion; no existe un motor de reserva/bloqueo de stock concurrente.
+
+Reasignar un surtidor con transacciones o cambiar el stock inicial de un tanque
+con movimientos se rechaza para conservar el historial. Para una correccion usar
+un ajuste justificado o crear otro equipo, segun el caso.
+
+## Instalacion y compatibilidad
+
+El nuevo esquema tiene 38 tablas en vez de 35. Los scripts iniciales crean un
+esquema nuevo; no son un parche para una base existente. Crear una instalacion
+nueva no migra los datos del entorno comunitario. No borrar bases o volumenes
+para aplicar estos cambios. Las identidades permiten conservar IDs de ejemplos
+inferiores a 1.000.000; importar IDs superiores requiere sincronizacion.
+
+La moneda operativa es Bs y el catalogo exige `precio_bs`. `precio_usd` permanece
+como dato informativo. La conversion automatica por tipo de cambio necesita una
+regla de negocio adicional y no se presume en los detalles.
+
+La procedencia en el catalogo es una interpretacion provisional del atributo
+`origen`. Si un mismo combustible cambia de origen entre entregas, se debera
+mover esa informacion a recepciones/lotes y ajustar su trazabilidad.
+
+## Pruebas y pendientes
+
+`04_pruebas_integridad.sql` comprueba datos iniciales, restricciones, valores
+negativos/cero, precio, surtidor, tipos de transaccion, obligatoriedad del subtipo,
+identidades y conciliacion. Se ejecuta en una conexion nueva y revierte sus datos.
+Los saltos de identidades son normales. El README contiene el procedimiento.
+
+Los datos de ejemplo no son la poblacion final y la alerta se inserta manualmente.
+Quedan para los responsables respectivos: carga masiva, seguridad/auditoria,
+reglas automaticas, dashboard, Cloud, backup/restauracion y diagramas finales.
+
+La revision estatica del 18/11/2026 comprobo 38 tablas, 81 inserciones y 73 FK,
+sin discrepancias de columnas o claves en los datos iniciales. No se ejecutaron
+los scripts en un motor Oracle durante esta actualizacion: la imagen oficial
+estaba descargando con lentitud. La compilacion PL/SQL y las pruebas funcionales
+quedan expresamente pendientes de ejecucion; no se presentan como aprobadas.
